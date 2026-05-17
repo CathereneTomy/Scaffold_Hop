@@ -36,8 +36,8 @@ The generated molecules can also be used as inputs to the FARE GitHub repository
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd <repository-name>
+   git clone https://github.com/CathereneTomy/Scaffold_Hop.git
+   cd Scaffold_Hop
    ```
 
 2. Create a Python 3.14 virtual environment (recommended: use conda)
