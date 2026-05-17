@@ -1,0 +1,14 @@
+name: scaffold_hop
+
+channels:
+  - defaults
+
+dependencies:
+  - python=3.14.2
+  - pip:
+      - ipython
+      - rdkit==2026.3.1
+      - numpy==2.4.3
+      - scipy==1.17.1
+      - networkx==3.6.1
+      - matplotlib
