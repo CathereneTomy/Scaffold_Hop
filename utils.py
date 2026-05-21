@@ -1879,30 +1879,38 @@ def attach_fragments_to_query(
     # Helpers
     # ------------------------------------------------------------------
     def _add_fragment_atoms(frag_atoms_list):
-        """Add fragment atoms + intra-fragment bonds. Returns ref→new idx map."""
         ref_to_new = {}
         for ref_atom_idx in frag_atoms_list:
             ref_atom = ref_mol.GetAtomWithIdx(ref_atom_idx)
             new_atom = Chem.Atom(ref_atom.GetAtomicNum())
             new_atom.SetFormalCharge(ref_atom.GetFormalCharge())
             new_atom.SetNumExplicitHs(ref_atom.GetNumExplicitHs())
-            new_atom.SetIsAromatic(False)   # let SanitizeMol re-perceive
-            new_idx  = new_mol.AddAtom(new_atom)
+            new_atom.SetIsAromatic(False)
+            new_idx = new_mol.AddAtom(new_atom)
             ref_to_new[ref_atom_idx] = new_idx
-
+    
+        # ── Kekulize ref_mol once so aromatic bonds have explicit SINGLE/DOUBLE ──
+        ref_mol_kek = Chem.RWMol(ref_mol)
+        try:
+            Chem.Kekulize(ref_mol_kek, clearAromaticFlags=False)  # in-place on copy
+        except Exception:
+            pass  # if it fails, fall back to original bond types below
+    
         frag_set = set(frag_atoms_list)
         for ref_atom_idx in frag_atoms_list:
-            ref_atom = ref_mol.GetAtomWithIdx(ref_atom_idx)
+            ref_atom = ref_mol_kek.GetAtomWithIdx(ref_atom_idx)
             for nb in ref_atom.GetNeighbors():
                 nb_idx = nb.GetIdx()
                 if nb_idx not in frag_set or nb_idx <= ref_atom_idx:
                     continue
-                bond  = ref_mol.GetBondBetweenAtoms(ref_atom_idx, nb_idx)
+                bond  = ref_mol_kek.GetBondBetweenAtoms(ref_atom_idx, nb_idx)
                 btype = bond.GetBondType()
+                # After Kekulize, AROMATIC bonds become SINGLE or DOUBLE —
+                # but if Kekulize failed and bond is still AROMATIC, fall back to SINGLE
                 if btype == Chem.BondType.AROMATIC:
                     btype = Chem.BondType.SINGLE
                 new_mol.AddBond(ref_to_new[ref_atom_idx], ref_to_new[nb_idx], btype)
-
+    
         return ref_to_new
 
     def _find_attach(query_attach_atom, ref_boundary_coord):
